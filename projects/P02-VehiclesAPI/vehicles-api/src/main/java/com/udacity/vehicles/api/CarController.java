@@ -12,9 +12,15 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import javax.validation.Valid;
+import javax.ws.rs.Produces;
+//import javax.ws.rs.core.MediaType;
 
+import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
 import org.springframework.hateoas.Resource;
 import org.springframework.hateoas.Resources;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,11 +31,17 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+
 /**
  * Implements a REST-based controller for the Vehicles API.
  */
 @RestController
 @RequestMapping("/cars")
+@ApiResponses(value = {
+        @ApiResponse(code = 400, message = "This is a bad request, please follow the API documentation for the proper request."),
+        @ApiResponse(code = 401, message = "Due to security constraints, your access request cannot be authorized."),
+        @ApiResponse(code = 500, message = "The server is down. Please make sure that the Vehicle service is running.")
+})
 class CarController {
 
     private final CarService carService;
@@ -44,7 +56,7 @@ class CarController {
      * Creates a list to store any vehicles.
      * @return list of vehicles
      */
-    @GetMapping
+    @GetMapping(produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
     Resources<Resource<Car>> list() {
         List<Resource<Car>> resources = carService.list().stream().map(assembler::toResource)
                 .collect(Collectors.toList());
@@ -57,7 +69,10 @@ class CarController {
      * @param id the id number of the given vehicle
      * @return all information for the requested vehicle
      */
-    @GetMapping("/{id}")
+    @ApiOperation(value = "Returns Car details associated with the id")
+    @ApiResponses(value = {@ApiResponse(code = 200,message = "Succesfully retrieved car associated with id")})
+    @GetMapping(path= "/{id}", produces = MediaType.APPLICATION_JSON_UTF8_VALUE)
+    //@Produces({ MediaType.APPLICATION_JSON, MediaType.APPLICATION_XML })
     Resource<Car> get(@PathVariable Long id) {
         /**
          * DONE: Use the `findById` method from the Car Service to get car information.
@@ -103,7 +118,7 @@ class CarController {
 
         car.setId(id);
 
-        Car savedCar = this.carService.save(car);
+        Car savedCar = carService.save(car);
         Resource<Car> resource = assembler.toResource(savedCar);
         return ResponseEntity.ok(resource);
     }

@@ -59,8 +59,8 @@ public class VehiclesApiApplicationTests {
     private JacksonTester<Car> json;
 
 
-    @Before
-    //@Test
+    //@Before
+    @Test
     public void setup() {
         Car savedCar = this.carRepository.save(getCar());
     }

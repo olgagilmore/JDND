@@ -8,7 +8,10 @@ import com.udacity.vehicles.domain.car.CarRepository;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import org.springframework.web.reactive.function.client.WebClient;
 
 /**
  * Implements the car service create, read, update or delete
@@ -22,6 +25,10 @@ public class CarService {
     private MapsClient mapsClient;
     private PriceClient priceClient;
 
+    /*@Autowired
+    @Qualifier("pricing")
+    WebClient.Builder pricingWebClient;*/
+
     public CarService(CarRepository repository, MapsClient mapsClient1, PriceClient priceClient1) {
         /**
          * DONE: Add the Maps and Pricing Web Clients you create
@@ -30,6 +37,8 @@ public class CarService {
         this.repository = repository;
         this.mapsClient = mapsClient1;
         this.priceClient = priceClient1;
+
+        //this.priceClient = new PriceClient(pricingWebClient.baseUrl("http://PRICING-SERVICE").build()); //REPLACE THE URL WITH PROPERTY FROM applicaton.properties
     }
 
     /**
@@ -53,9 +62,11 @@ public class CarService {
          */
         //Car car = new Car();
 
-        Optional<Car> car = repository.findById(id);
+        /*Optional<Car> car = repository.findById(id);
         if (!car.isPresent())
-            throw new CarNotFoundException();
+            throw new CarNotFoundException();*/
+
+        Car car = repository.findById(id).orElseThrow(CarNotFoundException::new);
 
         /**
          * DONE: Use the Pricing Web client you create in `VehiclesApiApplication`
@@ -65,7 +76,7 @@ public class CarService {
          *   the pricing service each time to get the price.
          */
         String price = priceClient.getPrice(id);
-        car.get().setPrice(price);
+        car.setPrice(price);
 
 
         /**
@@ -76,12 +87,12 @@ public class CarService {
          * Note: The Location class file also uses @transient for the address,
          * meaning the Maps service needs to be called each time for the address.
          */
-        Location location = car.get().getLocation();
+        Location location = car.getLocation();
         Location newLocation = this.mapsClient.getAddress(location);
 
-        car.get().setLocation(newLocation);
+        car.setLocation(newLocation);
 
-        return car.get();
+        return car;
     }
 
     /**
@@ -95,6 +106,7 @@ public class CarService {
                     .map(carToBeUpdated -> {
                         carToBeUpdated.setDetails(car.getDetails());
                         carToBeUpdated.setLocation(car.getLocation());
+                        carToBeUpdated.setCondition(car.getCondition());
                         return repository.save(carToBeUpdated);
                     }).orElseThrow(CarNotFoundException::new);
         }
